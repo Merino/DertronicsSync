@@ -1,0 +1,20 @@
+# Ignore Paths #
+bin/*
+develop-eggs/*
+downloads/*
+eggs/*
+include/*
+lib/*
+parts/*
+vcs/*
+src/static/**/*
+
+# Ignore Files #
+.DS_Store
+bin/bootstrap.py
+.Python
+.idea
+.installed.cfg
+settings_local.py
+*.pyc
+*.db
