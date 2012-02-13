@@ -1,4 +1,10 @@
-from decimal import Decimal
+
+from progressbar import AnimatedMarker, Bar, BouncingBar, Counter, ETA, \
+                        FileTransferSpeed, FormatLabel, Percentage, \
+                        ProgressBar, ReverseBar, RotatingMarker, \
+                        SimpleProgress, Timer
+import time
+
 from django.core.management.base import BaseCommand
 from dertronics.vendors.velleman.client import Client
 from dertronics.shop.client import Shop
@@ -18,17 +24,49 @@ class Command(BaseCommand):
         products_delete = shop_products.difference(velleman_products)
         products_update = shop_products.intersection(velleman_products)
 
-        print 'Add: '
-        print len(products_add)
-        print 'Delete: '
-        print len(products_delete)
-        print 'Update: '
-        print len(products_update)
+        if len(products_add) > 0:
+            pbar = self.new_progress_bar('Add Products', len(products_add))
+            for number, product in enumerate(products_add):
+                #start = time.time()
+                try:
+                    vp = velleman.process_product_data(product)
+                    dertronics.process_add_product(vp)
+                except:
+                    print "FAILD ADDING : %s" % product
+                    pass
 
-        for product in products_add:
-            vp = velleman.process_product_data(product)
-            dertronics.process_add_product(vp)
+                #elapsed = (time.time() - start)
+                #print 'One Product %s' % (elapsed)
+
+                pbar.update(number+1)
+            pbar.finish()
+
+#        if len(products_update) > 0:
+#            pbar = self.new_progress_bar('Update Products', len(products_update))
+#            for number, product in enumerate(products_update):
+#                print 36 * '-'
+#                start = time.clock()
+#                vp = velleman.process_update_product(product)
+#                dertronics.process_update_product(vp)
+#                elapsed = (time.clock() - start)
+#                print 'One Product %s' % (elapsed)
+#                print 36 * '-'
+#                pbar.update(number+1)
+#            pbar.finish()
+
+#        if len(products_delete) > 0:
+#            pbar = self.new_progress_bar('Delete Products', len(products_delete))
+#            for number, product in enumerate(products_delete):
+#                pbar.update(number+1)
+#            pbar.finish()
+
+
+    def new_progress_bar(self, title, max_val):
+        return ProgressBar(widgets=['%s (%s): ' % (title, max_val), Percentage(), Bar(), ETA()], maxval=max_val).start()
+
+
 #
+
 #        for product in products_add:
 #            vp = velleman.process_add_product(product)
 #            dertronics.process_add_product(vp)

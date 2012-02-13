@@ -1,5 +1,6 @@
 import xmlrpclib
 import base64
+import time
 
 class NotConnected(Exception):
     pass
@@ -14,12 +15,39 @@ class MagentoConnection(object):
     def connect(self):
         '''Connect to Magento's xmlrpc'''
         self.server = xmlrpclib.ServerProxy(self.url)
+        #self.server = xmlrpclib.MultiCall(self._server)
         self.token = self.server.login(self.username, self.apikey)
+        #self.token = self.server()
+
+
 
     def _call(self, res, *args, **kwargs):
+
+        start = time.time()
+
         if not self.token:
             raise NotConnected()
-        return self.server.call(self.token, res, *args, **kwargs)
+
+        result = self.server.call(self.token, res, *args, **kwargs)
+
+        elapsed = (time.time() - start)
+
+        #print 5* ' ' + '[%s] %s ' % (elapsed, res)
+
+        return result
+
+        #if not multi:
+        #result = self.push_multi_calls()
+        #self.server = xmlrpclib.MultiCall(self._server)
+        #return result
+
+#    def push_multi_calls(self):
+#        return self.server()
+#
+##    def _multi_call(self, res, *args, **kwargs):
+##        if not self.token:
+##            raise NotConnected()
+##        return
 
 class Magento(MagentoConnection):
 
@@ -35,11 +63,21 @@ class Magento(MagentoConnection):
         return self._call('catalog_product.list')
 
     def createProduct(self, sku, productdata, producttype):
-        return self._call('catalog_product.create', ['simple', producttype, sku, productdata])
+        return self._call( 'catalog_product.create', ['simple', producttype, sku, productdata])
 
     def updateProductData(self, sku, productdata):
         '''Updates the products for the product with the given sku'''
         return self._call('catalog_product.update', [sku, productdata])
+
+    def updateProductStock(self, sku, qty=1):
+        is_in_stock = 0
+        if qty > 0:
+            is_in_stock = 1
+            qty = int(qty)
+        else:
+            qty = 0
+        productdata = {'qty':qty, 'is_in_stock':is_in_stock}
+        return self._call('product_stock.update', [sku, productdata])
 
     #IMAGE OPERATIONS
     def getImagesOfProducts(self, sku):
